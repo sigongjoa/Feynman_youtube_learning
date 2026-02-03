@@ -1,0 +1,17 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*~
+
+# Generated Videos
+*.mp4
+
+# Generated Scripts & Texts from pipeline
+crawled_papers/
+script_*.json
+script.json
+source_text.txt
+
+# Temporary assets directory
+temp_video_assets/
