@@ -15,3 +15,6 @@ source_text.txt
 
 # Temporary assets directory
 temp_video_assets/
+\n# Debug artifacts
+debug_page.html
+debug_screenshot.png

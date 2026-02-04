@@ -2,18 +2,14 @@ import sys
 import json
 import os
 import textwrap
-import urllib.parse
+
+
+
 
 try:
     import requests
-    from selenium import webdriver
-    from selenium.webdriver.chrome.service import Service as ChromeService
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    from webdriver_manager.chrome import ChromeDriverManager
 except ImportError:
-    print("Required libraries are not installed. Please run 'pip install requests selenium webdriver-manager'")
+    print("Required library 'requests' is not installed. Please run 'pip install requests'")
     sys.exit(1)
 
 # --- Ollama 설정 ---
@@ -73,35 +69,7 @@ def generate_script_with_ollama(text_content: str, source_filename: str) -> dict
         print(f"Error: Failed to decode JSON from Ollama's response.")
         return None
 
-def scrape_image_url(driver, keywords: list) -> str:
-    """주어진 Selenium 드라이버를 사용하여 이미지를 스크랩합니다."""
-    if not keywords:
-        return ""
-    query = " ".join(keywords)
-    print(f"Scraping images for: '{query}'")
-    try:
-        query_encoded = urllib.parse.quote_plus(query)
-        url = f"https://www.google.com/search?q={query_encoded}&tbm=isch"
-        driver.get(url)
-        wait = WebDriverWait(driver, 10)
-        wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "img.rg_i")))
-        thumbnails = driver.find_elements(By.CSS_SELECTOR, "img.rg_i")
-        for img in thumbnails:
-            try:
-                driver.execute_script("arguments[0].click();", img)
-                img_element = WebDriverWait(driver, 5).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "img.sFlh5c.pT0Scc.iPVvYb"))
-                )
-                src = img_element.get_attribute('src')
-                if src and (src.startswith('http') or src.startswith('data:image')):
-                    print(f"Found image URL: {src[:100]}...")
-                    return src
-            except Exception:
-                continue
-        return ""
-    except Exception as e:
-        print(f"An error occurred during scraping for '{query}': {e}")
-        return ""
+
 
 def process_text_to_script(input_filepath: str, output_filepath: str) -> bool:
     """텍스트를 읽고, LLM으로 대본을 생성하고, 이미지를 스크랩한 후 JSON으로 저장합니다."""
@@ -117,23 +85,7 @@ def process_text_to_script(input_filepath: str, output_filepath: str) -> bool:
     if not script_data:
         return False
 
-    print("\n--- Initializing Browser for Image Scraping ---")
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    driver = None
-    try:
-        driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
-        if 'dialogue' in script_data and isinstance(script_data['dialogue'], list):
-            for item in script_data['dialogue']:
-                keywords = item.get('keywords')
-                image_url = scrape_image_url(driver, keywords) if keywords else ""
-                item['bg_image_url'] = image_url
-    finally:
-        if driver:
-            driver.quit()
-        print("\n--- Browser closed ---")
+
 
     try:
         with open(output_filepath, 'w', encoding='utf-8') as f:
